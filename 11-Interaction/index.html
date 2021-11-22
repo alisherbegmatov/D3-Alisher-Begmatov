@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alisher Begmatov</title>
+</head>
+
+<style>
+  /* Put the box in the center of the page */
+  body,
+  html {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #svg {
+    border: 1px solid;
+  }
+
+  select {
+    font-size: 1rem;
+    margin: 1rem 0;
+    align-self: flex-end;
+  }
+</style>
+
+<body>
+  <svg id="svg" width="600" height="300"></svg>
+
+  <div>
+    <select id="year-selector" value=0>
+      <option value="0" selected>1901</option>
+      <option value="1">1902</option>
+      <option value="2">1903</option>
+      <option value="3">1904</option>
+      <option value="4">1905</option>
+    </select>
+
+    <select id="more-years">
+      <option value="0" selected>0</option>
+      <option value="1">+1</option>
+      <option value="2">+2</option>
+      <option value="3">+3</option>
+    </select>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+
+    function convertToArray(obj) {
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      return months.map(month => {
+        const temp = parseFloat(obj[month])
+        return { month: month, temp }
+      })
+    }
+
+    function drawGraph(year_data, graph, svg, idx) {
+      const width = 600
+      const height = 300
+      const margin = 40
+
+      const monthData = convertToArray(year_data)
+
+      const xscale = d3.scaleLinear()
+        .domain([0, monthData.length - 1])
+        .range([margin, width - margin])
+
+      const yscale = d3.scaleLinear()
+        .domain(d3.extent(monthData, d => d.temp))
+        .range([height - margin, margin])
+
+      const linegen = d3.area()
+        .x((d, i) => xscale(i))
+        .y1(d => yscale(d.temp))
+        .y0(height - margin)
+        .curve(d3.curveBasis)
+
+      const hue = 360 / 12 * idx // data.length
+      const fillColor = `hsla(${hue}, 100%, 50%, 0.33)`
+
+      // Draw the graph
+      const path = graph
+        .append('path')
+        .attr('d', linegen(monthData))
+        .attr('fill', fillColor)
+
+      return { path, linegen }
+
+    }
+    async function handleData() {
+      const data = await d3.csv('Weather Data in India from 1901 to 2017.csv')
+      const year_1901 = data[0]
+      const months_1901 = convertToArray(year_1901)
+
+      const width = 600
+      const height = 300
+      const margin = 40
+
+      const yscale = d3.scaleLinear()
+        .domain(d3.extent(months_1901, d => d.temp))
+        .range([height - margin, margin])
+
+      // Select the SVG
+      const svg = d3
+        .select('#svg')
+        .style('border', '1px solid')
+
+      // Make a group for the graph
+      const graph = svg
+        .append('g')
+
+      const monthsScale = d3.scaleTime()
+        .domain([new Date("1901-01-01"), new Date("1901-12-01")])
+        .range([margin, width - margin])
+        .nice()
+
+      // Define the axis generators
+      const bottomAxis = d3.axisBottom(monthsScale)
+      const leftAxis = d3.axisLeft(yscale)
+
+      // Create the bottom axis
+      svg
+        .append('g')
+        .attr('transform', `translate(0, ${height - margin})`)
+        .call(bottomAxis)
+
+      // Create the left axis
+      svg
+        .append('g')
+        .attr('transform', `translate(${margin}, 0)`)
+        .call(leftAxis)
+
+      const { path, linegen } = drawGraph(data[0], graph, svg, 0)
+      const yearSelector = document.getElementById("year-selector")
+      const moreYears = document.getElementById("more-years")
+      let index = 0
+
+      yearSelector.addEventListener("change", (e) => {
+        index = parseInt(e.target.value)
+        const hue = 360 / 12 * index // data.length
+        const fillColor = `hsla(${hue}, 100%, 50%, 0.33)`
+
+        path
+          .transition()
+          .duration(1000)
+          .ease(d3.easeExpIn) // Add an easing function here! 
+          .attr('d', linegen(convertToArray(data[index])))
+          .attr('fill', fillColor)
+      })
+
+      pathList = []
+
+      moreYears.addEventListener("change", (e) => {
+        if (pathList.length !== 0) {
+          pathList.forEach(element => {
+            element.remove()
+          });
+        }
+        pathList = []
+        const decision = e.target.value
+        for (let i = 0; i < decision; i++) {
+          const { path, linegen } = drawGraph(data[index + i], graph, svg, i)
+          pathList.push(path)
+        }
+      })
+    }
+    handleData()
+
+  </script>
+
+</body>
+
+</html>

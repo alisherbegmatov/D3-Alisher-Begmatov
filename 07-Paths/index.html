@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Alisher Begmatov</title>
+</head>
+
+<style>
+  /* Put the box in the center of the page */
+  body,
+  html {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #svg {
+    border: 1px solid;
+  }
+</style>
+
+<body>
+
+  <svg id="svg" width="600" height="400"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+
+    // Your code here
+    function getDataForState(data, state) {
+      const arr = data
+        .filter(d => d.state === state)
+        .filter(d => !isNaN(d.precipitation))
+        .map(d => {
+          d.precipitation = parseFloat(d.precipitation)
+          return d
+        })
+      return arr
+    }
+
+    function handleData(data) {
+
+      // draw stuff here
+      const scData = getDataForState(data, 'SC')
+
+      // x scale 
+      const xscale = d3.scaleLinear()
+        .domain([0, scData.length]) // number of values
+        .range([40, 560]) // width of #svg
+
+      const percipitationExtents = d3.extent(scData, d => d.precipitation)
+
+      const yscale = d3.scaleLinear()
+        .domain(percipitationExtents)
+        .range([360, 40])
+
+      // line generator
+      const linegen = d3.line()
+        .x((d, i) => xscale(i))
+        .y(d => yscale(d.precipitation))
+        .curve(d3.curveLinear)
+
+      d3.select('#svg')
+        .append('path')
+        .attr('d', linegen(scData))
+        .attr('stroke-width', 3)
+        .attr('stroke', '#6495ED')
+        .attr('fill', 'none')
+    }
+    d3.csv('precipitation.csv')
+      .then(handleData)
+
+  </script>
+
+</body>
+
+</html>

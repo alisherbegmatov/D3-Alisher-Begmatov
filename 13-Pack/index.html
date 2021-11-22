@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alisher Begmatov</title>
+
+</head>
+
+<body>
+  <svg id="svg" width="600" height="600"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+
+    async function handleData() {
+      const salesData = await d3.json('monthlySales.json')
+      const width = 600;
+      const height = 600;
+      const margin = 40
+      const data = {
+        "children": salesData
+      };
+
+      const salesExtent = d3.extent(salesData, d => d.sales)
+      const colorScale = d3.scaleSequential()
+        .domain(salesExtent)
+        .interpolator(d3.interpolateViridis)
+
+      const pack = d3.pack()
+        .size([width, height])
+        .padding(margin)
+
+      const rootNode = d3.hierarchy(data)
+      rootNode.sum(d => d.sales);
+      pack(rootNode)
+
+      const svg = d3
+        .select('#svg')
+
+      const group = svg
+        .append('g')
+        .selectAll('circle')
+        .attr('fill', 'white')
+        .data(rootNode.descendants())
+        .enter()
+
+      group
+        .append('circle')
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y)
+        .attr('r', d => d.r)
+        .attr('fill', d => colorScale(d.sales))
+        .attr('opacity', '0.5')
+
+      group
+        .append('text')
+        .text(d => d.data.sales)
+        .attr('x', d => d.x - 14)
+        .attr('y', d => d.y + 5)
+        .style('font-family', 'Futura')
+        .style('font-size', '14px')
+    }
+    handleData()
+
+  </script>
+
+</body>
+
+</html>
