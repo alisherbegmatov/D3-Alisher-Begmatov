@@ -43,7 +43,6 @@
       const group = svg
         .append('g')
         .selectAll('circle')
-        .attr('fill', 'white')
         .data(rootNode.descendants())
         .enter()
 
@@ -52,7 +51,7 @@
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
         .attr('r', d => d.r)
-        .attr('fill', d => colorScale(d.sales))
+        .attr('fill', d => colorScale(d.data.sales) || 'white')
         .attr('opacity', '0.5')
 
       group
